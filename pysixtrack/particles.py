@@ -1,20 +1,16 @@
 import numpy as np
 
-# attaching faddeeva to np
-from scipy.special import wofz
-
-
-def wfun(z_re, z_im):
-    w = wofz(z_re + 1j * z_im)
-    return w.real, w.imag
-
-
-np.wfun = wfun
-
-
 def count_not_none(*lst):
     return len(lst) - sum(p is None for p in lst)
 
+def inplace_infront(x,flag):
+    ll=sum(flag)
+    p1=x[flag]
+    p2=x[~flag]
+    x[:ll]=p1
+    x[ll:]=p2
+    return x[:ll]
+    
 
 class Particles(object):
     clight = 299792458
@@ -220,6 +216,7 @@ class Particles(object):
         self.partid = partid
         self.turn = turn
         self.state = state
+        self._orginal=self.to_dict()
 
     Px = property(lambda p: p.px * p.p0c * p.mratio)
     Py = property(lambda p: p.py * p.p0c * p.mratio)
@@ -393,6 +390,14 @@ class Particles(object):
         qratio  = {self.qratio}
         chi     = {self.chi}"""
         return out
+
+    def sort_lost(self):
+        if hasattr(self.state,'__iter__'):
+            mask=self.state==1
+            for kk in self._dict_vars:
+                vv=getattr(self,kk)
+                if hasattr(vv,'__iter__'):
+                    setattr(self,kk,inplace_infront(getattr(self,kk),mask))
 
     _dict_vars = (
         "s x px y py delta zeta".split()
